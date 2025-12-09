@@ -1,0 +1,336 @@
+# Phase III: Logical Database Design
+## Airline Reservation and Flight Management System
+
+---
+
+## Entity-Relationship Model
+
+### Entities and Relationships
+
+#### **1. AIRCRAFT (Parent Entity)**
+- **Relationship:** One aircraft can have many flights (1:M)
+- **Relationship:** One aircraft can have many maintenance records (1:M)
+
+#### **2. FLIGHTS (Central Entity)**
+- **Relationship:** One flight belongs to one aircraft (M:1)
+- **Relationship:** One flight can have many reservations (1:M)
+- **Relationship:** One flight can have many crew assignments (1:M)
+
+#### **3. PASSENGERS (Independent Entity)**
+- **Relationship:** One passenger can have many reservations (1:M)
+
+#### **4. RESERVATIONS (Junction/Transaction Entity)**
+- **Relationship:** One reservation belongs to one passenger (M:1)
+- **Relationship:** One reservation belongs to one flight (M:1)
+- **Relationship:** One reservation can have one payment (1:1)
+
+#### **5. CREW (Independent Entity)**
+- **Relationship:** One crew member can have many assignments (1:M)
+
+#### **6. CREW_ASSIGNMENTS (Junction Entity)**
+- **Relationship:** One assignment links one crew member to one flight (M:N resolver)
+
+#### **7. MAINTENANCE_RECORDS (Transaction Entity)**
+- **Relationship:** One maintenance record belongs to one aircraft (M:1)
+
+#### **8. PAYMENTS (Transaction Entity)**
+- **Relationship:** One payment belongs to one reservation (1:1)
+
+---
+
+## Cardinality Summary
+
+```
+AIRCRAFT ||--o{ FLIGHTS : "operates"
+AIRCRAFT ||--o{ MAINTENANCE_RECORDS : "receives"
+FLIGHTS ||--o{ RESERVATIONS : "contains"
+FLIGHTS ||--o{ CREW_ASSIGNMENTS : "requires"
+PASSENGERS ||--o{ RESERVATIONS : "makes"
+RESERVATIONS ||--|| PAYMENTS : "has"
+CREW ||--o{ CREW_ASSIGNMENTS : "assigned_to"
+```
+
+---
+
+## Normalization Analysis
+
+### First Normal Form (1NF)
+✅ **Achieved** - All tables have:
+- Atomic values (no repeating groups)
+- Each column contains single values
+- Primary keys defined
+
+**Example:** Instead of storing multiple phone numbers in one PASSENGERS.phone field, each passenger has one phone number. If multiple needed, a separate PASSENGER_CONTACTS table would be created.
+
+### Second Normal Form (2NF)
+✅ **Achieved** - All tables meet:
+- All non-key attributes fully dependent on primary key
+- No partial dependencies exist
+
+**Example:** In CREW_ASSIGNMENTS, assignment_id is the PK. Both crew_id and flight_id are part of the business logic but not partial key dependencies. The assigned_date depends on the complete assignment_id.
+
+### Third Normal Form (3NF)
+✅ **Achieved** - All tables meet:
+- No transitive dependencies
+- Non-key attributes depend only on primary key
+
+**Example:** In FLIGHTS table, aircraft_model is NOT stored. Instead, aircraft_id (FK) references AIRCRAFT table where aircraft_model is stored. This eliminates transitive dependency (flight → aircraft → model).
+
+### Justification
+The design is normalized to 3NF to:
+- Eliminate data redundancy (e.g., aircraft details stored once)
+- Ensure data integrity through FK constraints
+- Simplify updates (change aircraft model once, not in every flight)
+- Support efficient querying with proper indexing
+
+---
+
+## Complete Data Dictionary
+
+### Table: AIRCRAFT
+
+| Column Name | Data Type | Constraints | Purpose |
+|-------------|-----------|-------------|---------|
+| aircraft_id | NUMBER(10) | PK, NOT NULL | Unique identifier for each aircraft |
+| aircraft_model | VARCHAR2(50) | NOT NULL | Model name (e.g., Boeing 737, Airbus A320) |
+| total_seats | NUMBER(3) | NOT NULL, CHECK (total_seats > 0) | Maximum passenger capacity |
+| last_maintenance | DATE | NOT NULL | Date of most recent maintenance check |
+
+**Indexes:** PK index on aircraft_id
+
+---
+
+### Table: FLIGHTS
+
+| Column Name | Data Type | Constraints | Purpose |
+|-------------|-----------|-------------|---------|
+| flight_id | NUMBER(10) | PK, NOT NULL | Unique identifier for each flight |
+| origin | VARCHAR2(50) | NOT NULL | Departure airport/city code |
+| destination | VARCHAR2(50) | NOT NULL | Arrival airport/city code |
+| departure_time | DATE | NOT NULL | Scheduled departure timestamp |
+| arrival_time | DATE | NOT NULL, CHECK (arrival_time > departure_time) | Scheduled arrival timestamp |
+| aircraft_id | NUMBER(10) | FK → AIRCRAFT, NOT NULL | Aircraft assigned to this flight |
+| status | VARCHAR2(20) | NOT NULL, DEFAULT 'Scheduled' | Flight status: Scheduled, Boarding, Departed, Delayed, Cancelled |
+
+**Indexes:** 
+- PK index on flight_id
+- FK index on aircraft_id
+- Index on departure_time for query optimization
+- Index on status for filtering
+
+---
+
+### Table: PASSENGERS
+
+| Column Name | Data Type | Constraints | Purpose |
+|-------------|-----------|-------------|---------|
+| passenger_id | NUMBER(10) | PK, NOT NULL | Unique identifier for each passenger |
+| full_name | VARCHAR2(100) | NOT NULL | Passenger's complete legal name |
+| phone | VARCHAR2(20) | NOT NULL, UNIQUE | Contact phone number |
+| email | VARCHAR2(100) | NOT NULL, UNIQUE | Email address for notifications |
+
+**Indexes:** 
+- PK index on passenger_id
+- Unique index on email
+- Unique index on phone
+
+---
+
+### Table: RESERVATIONS
+
+| Column Name | Data Type | Constraints | Purpose |
+|-------------|-----------|-------------|---------|
+| reservation_id | NUMBER(10) | PK, NOT NULL | Unique identifier for each reservation |
+| passenger_id | NUMBER(10) | FK → PASSENGERS, NOT NULL | Who made the reservation |
+| flight_id | NUMBER(10) | FK → FLIGHTS, NOT NULL | Which flight is reserved |
+| seat_number | VARCHAR2(10) | NOT NULL | Assigned seat (e.g., 12A, 5B) |
+| reservation_date | DATE | NOT NULL, DEFAULT SYSDATE | When reservation was made |
+| payment_status | VARCHAR2(20) | NOT NULL, DEFAULT 'Pending' | Pending, Completed, Cancelled, Refunded |
+
+**Indexes:** 
+- PK index on reservation_id
+- FK index on passenger_id
+- FK index on flight_id
+- Unique constraint on (flight_id, seat_number) to prevent double-booking
+
+---
+
+### Table: CREW
+
+| Column Name | Data Type | Constraints | Purpose |
+|-------------|-----------|-------------|---------|
+| crew_id | NUMBER(10) | PK, NOT NULL | Unique identifier for crew member |
+| full_name | VARCHAR2(100) | NOT NULL | Crew member's full name |
+| role | VARCHAR2(50) | NOT NULL | Pilot, Co-Pilot, Flight Attendant, Engineer |
+| qualifications | VARCHAR2(100) | NOT NULL | Required certifications (e.g., Boeing 737, CPR) |
+| last_flight_date | DATE | NULL | Date of most recent flight assignment |
+
+**Indexes:** 
+- PK index on crew_id
+- Index on role for crew filtering
+
+---
+
+### Table: CREW_ASSIGNMENTS
+
+| Column Name | Data Type | Constraints | Purpose |
+|-------------|-----------|-------------|---------|
+| assignment_id | NUMBER(10) | PK, NOT NULL | Unique identifier for each assignment |
+| crew_id | NUMBER(10) | FK → CREW, NOT NULL | Which crew member is assigned |
+| flight_id | NUMBER(10) | FK → FLIGHTS, NOT NULL | Which flight they are assigned to |
+| assigned_date | DATE | NOT NULL, DEFAULT SYSDATE | When assignment was made |
+
+**Indexes:** 
+- PK index on assignment_id
+- FK index on crew_id
+- FK index on flight_id
+- Unique constraint on (crew_id, flight_id) to prevent duplicate assignments
+
+---
+
+### Table: MAINTENANCE_RECORDS
+
+| Column Name | Data Type | Constraints | Purpose |
+|-------------|-----------|-------------|---------|
+| record_id | NUMBER(10) | PK, NOT NULL | Unique identifier for maintenance record |
+| aircraft_id | NUMBER(10) | FK → AIRCRAFT, NOT NULL | Which aircraft was serviced |
+| maintenance_type | VARCHAR2(50) | NOT NULL | Routine, Emergency, Annual, Repair |
+| maintenance_date | DATE | NOT NULL | When maintenance was performed |
+| next_due_date | DATE | NOT NULL | When next maintenance is required |
+
+**Indexes:** 
+- PK index on record_id
+- FK index on aircraft_id
+- Index on next_due_date for alert queries
+
+---
+
+### Table: PAYMENTS
+
+| Column Name | Data Type | Constraints | Purpose |
+|-------------|-----------|-------------|---------|
+| payment_id | NUMBER(10) | PK, NOT NULL | Unique identifier for each payment |
+| reservation_id | NUMBER(10) | FK → RESERVATIONS, NOT NULL, UNIQUE | Which reservation this payment is for |
+| amount | NUMBER(10,2) | NOT NULL, CHECK (amount >= 0) | Payment amount in currency |
+| method | VARCHAR2(20) | NOT NULL | Cash, Credit Card, Debit Card, Mobile Money |
+| payment_date | DATE | NOT NULL, DEFAULT SYSDATE | When payment was received |
+
+**Indexes:** 
+- PK index on payment_id
+- Unique FK index on reservation_id (1:1 relationship)
+
+---
+
+## Assumptions and Business Rules
+
+### Assumptions
+1. Each flight is operated by exactly one aircraft
+2. A seat can only be reserved once per flight
+3. Crew members can be assigned to multiple flights but not overlapping times
+4. Payments are recorded immediately upon successful transaction
+5. Aircraft maintenance schedule is tracked proactively
+6. Crew qualifications are verified before assignment
+7. Flight status changes are time-driven or manually updated
+
+### Business Rules
+1. **Seat Uniqueness:** No two passengers can have the same seat on the same flight
+2. **Payment Requirement:** Reservation must have payment before flight departure
+3. **Crew Qualification:** Crew role must match flight requirements (e.g., Pilot for aircraft type)
+4. **Maintenance Compliance:** Aircraft cannot be scheduled if maintenance is overdue
+5. **Crew Rest Period:** Minimum 12 hours between flight assignments for crew
+6. **Capacity Constraint:** Total reservations per flight ≤ aircraft total_seats
+7. **Time Validation:** arrival_time must be after departure_time
+
+---
+
+## BI Considerations
+
+### Fact Tables (Transaction/Metrics)
+- **RESERVATIONS** - Measures: count, revenue per booking
+- **PAYMENTS** - Measures: total amount, payment method distribution
+- **FLIGHTS** - Measures: occupancy rate, on-time performance
+
+### Dimension Tables (Descriptive)
+- **AIRCRAFT** - Dimensions: model, capacity
+- **PASSENGERS** - Dimensions: contact info (for customer segmentation)
+- **CREW** - Dimensions: role, qualifications
+
+### Slowly Changing Dimensions (SCD)
+- **CREW.qualifications** - Type 1 (overwrite) - Always reflect current certifications
+- **AIRCRAFT.last_maintenance** - Type 1 (overwrite) - Latest maintenance date
+
+### Aggregation Levels
+- **Revenue:** By flight, by route (origin-destination), by time period (daily, monthly)
+- **Occupancy:** By flight, by aircraft model, by route
+- **Crew Utilization:** By crew member, by role, by time period
+
+### Audit Trails
+- **RESERVATIONS.reservation_date** - When booking occurred
+- **PAYMENTS.payment_date** - Transaction timestamp
+- **CREW_ASSIGNMENTS.assigned_date** - Assignment tracking
+- **MAINTENANCE_RECORDS** - Complete history of aircraft servicing
+
+---
+
+## ER Diagram Description
+
+```
+┌─────────────┐
+│  AIRCRAFT   │
+│ PK: aircraft_id │
+│  - model    │
+│  - seats    │
+│  - last_mnt │
+└──────┬──────┘
+       │ 1
+       │
+       │ M
+┌──────▼──────────────┐         ┌──────────────┐
+│     FLIGHTS         │         │    CREW      │
+│ PK: flight_id       │         │ PK: crew_id  │
+│ FK: aircraft_id     │         │  - name      │
+│  - origin           │         │  - role      │
+│  - destination      │         │  - quals     │
+│  - depart/arrive    │         │  - last_flt  │
+│  - status           │         └──────┬───────┘
+└──────┬──────────────┘                │ 1
+       │ 1                              │
+       │                                │ M
+       │ M                      ┌───────▼────────┐
+┌──────▼────────────┐           │ CREW_ASSIGN    │
+│  RESERVATIONS     │           │ PK: assign_id  │
+│ PK: reserv_id     │           │ FK: crew_id    │
+│ FK: passenger_id  ├──┐        │ FK: flight_id  │
+│ FK: flight_id     │  │        └────────────────┘
+│  - seat_number    │  │
+│  - reserv_date    │  │
+│  - payment_sts    │  │
+└───────────────────┘  │
+                       │ 1
+         ┌─────────────┘
+         │
+         │ 1
+┌────────▼────────┐         ┌──────────────┐
+│   PAYMENTS      │         │  PASSENGERS  │
+│ PK: payment_id  │         │ PK: pass_id  │
+│ FK: reserv_id   │         │  - name      │
+│  - amount       │         │  - phone     │
+│  - method       │         │  - email     │
+│  - pay_date     │         └──────────────┘
+└─────────────────┘
+
+┌──────────────────┐
+│ MAINTENANCE_REC  │
+│ PK: record_id    │
+│ FK: aircraft_id  │
+│  - maint_type    │
+│  - maint_date    │
+│  - next_due      │
+└──────────────────┘
+```
+
+---
+
+**Prepared by:** Tuyishime Sabato Gad (26717)  
+**Date:** December 2025  
+**Institution:** AUCA

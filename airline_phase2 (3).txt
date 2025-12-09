@@ -1,0 +1,206 @@
+# Phase II: Business Process Modeling
+## Airline Reservation and Flight Management System
+
+### Business Process Overview
+
+This document describes the core business processes of the Airline Reservation and Flight Management System, focusing on Management Information System (MIS) relevance.
+
+---
+
+## Scope Definition
+
+**Primary Business Process:** End-to-end flight reservation and operational management
+
+**MIS Relevance:** 
+- Order processing (booking reservations)
+- Resource management (aircraft and crew allocation)
+- Revenue tracking and financial reporting
+- Safety compliance monitoring
+- Real-time operational decision support
+
+**Objectives:**
+1. Automate passenger booking and payment processing
+2. Ensure safe crew scheduling with qualification validation
+3. Prevent scheduling of maintenance-overdue aircraft
+4. Generate analytics for route profitability and capacity optimization
+5. Maintain comprehensive audit trails for compliance
+
+**Expected Outcomes:**
+- Reduced booking errors by 90%
+- 100% crew safety compliance
+- Zero flights with overdue maintenance
+- Real-time revenue and occupancy insights
+
+---
+
+## Key Entities and Roles
+
+### 1. **Passengers (External Users)**
+- **Role:** Book flights, make payments, receive confirmations
+- **Responsibilities:** Provide accurate information, complete payments
+- **Data Generated:** Personal details, booking preferences, payment records
+
+### 2. **Reservation Agents (Internal Users)**
+- **Role:** Process bookings, handle customer inquiries, manage seat assignments
+- **Responsibilities:** Verify availability, confirm reservations, process payments
+- **Data Generated:** Reservation records, payment transactions
+
+### 3. **Flight Operations Team**
+- **Role:** Schedule flights, assign crews, monitor flight status
+- **Responsibilities:** Ensure crew qualifications, validate aircraft readiness
+- **Data Generated:** Flight schedules, crew assignments, status updates
+
+### 4. **Maintenance Department**
+- **Role:** Track aircraft maintenance, update service records
+- **Responsibilities:** Log maintenance activities, flag overdue services
+- **Data Generated:** Maintenance logs, safety alerts
+
+### 5. **Management/Analytics Team**
+- **Role:** Monitor KPIs, analyze revenue, optimize routes
+- **Responsibilities:** Review reports, make strategic decisions
+- **Data Generated:** Business intelligence reports, trend analysis
+
+### 6. **Database System (Automated)**
+- **Role:** Enforce business rules, trigger alerts, log audits
+- **Responsibilities:** Validate data integrity, prevent violations, generate notifications
+
+---
+
+## Swimlane Process Flow Description
+
+### **Lane 1: Passenger**
+- Initiates booking request
+- Selects flight and seat
+- Completes payment
+- Receives confirmation
+
+### **Lane 2: Reservation System (Automated)**
+- Checks flight availability
+- Validates seat availability
+- Processes payment
+- Generates reservation record
+- Sends confirmation
+
+### **Lane 3: Flight Operations**
+- Reviews flight schedule
+- Assigns qualified crew members
+- Validates aircraft maintenance status
+- Updates flight status (Scheduled → Boarding → Departed)
+
+### **Lane 4: Maintenance System (Automated)**
+- Monitors aircraft maintenance dates
+- Triggers alerts for overdue maintenance
+- Blocks non-compliant aircraft from scheduling
+- Logs all maintenance activities
+
+### **Lane 5: Management/BI Layer**
+- Receives aggregated data
+- Analyzes revenue per flight
+- Reviews occupancy rates
+- Identifies profitable routes
+
+---
+
+## Key Decision Points
+
+1. **Is the flight available?**
+   - YES → Check seat availability
+   - NO → Suggest alternative flights
+
+2. **Is the seat available?**
+   - YES → Proceed to payment
+   - NO → Offer other seat options
+
+3. **Is payment successful?**
+   - YES → Confirm reservation
+   - NO → Retry or cancel
+
+4. **Is crew member qualified?**
+   - YES → Assign to flight
+   - NO → Select alternate crew
+
+5. **Is aircraft maintenance current?**
+   - YES → Allow scheduling
+   - NO → Block flight, send alert
+
+---
+
+## MIS Functions Explained
+
+### Transactional Processing
+- Real-time reservation booking
+- Instant payment processing
+- Automated seat allocation
+
+### Operational Control
+- Crew qualification validation
+- Aircraft safety compliance enforcement
+- Flight status management
+
+### Decision Support
+- Revenue analysis by route
+- Occupancy percentage tracking
+- Crew utilization reports
+- Maintenance forecasting
+
+### Strategic Planning
+- Route profitability analysis
+- Seasonal demand patterns
+- Fleet optimization recommendations
+
+---
+
+## Organizational Impact
+
+### Efficiency Gains
+- **Before:** Manual booking taking 10-15 minutes per passenger
+- **After:** Automated booking in under 2 minutes
+
+### Safety Improvements
+- Automated crew rest period validation
+- Zero tolerance for overdue maintenance
+- Real-time compliance monitoring
+
+### Financial Benefits
+- Accurate revenue tracking per flight
+- Reduced overbooking penalties
+- Optimized pricing based on occupancy data
+
+### Data-Driven Decisions
+- Identify underperforming routes
+- Allocate aircraft based on demand
+- Schedule maintenance during low-demand periods
+
+---
+
+## Analytics Opportunities
+
+1. **Predictive Analytics**
+   - Forecast demand for specific routes
+   - Predict maintenance needs based on flight hours
+   - Anticipate crew scheduling conflicts
+
+2. **Descriptive Analytics**
+   - Total revenue per month/quarter
+   - Average occupancy rate by route
+   - Most profitable flight times
+
+3. **Prescriptive Analytics**
+   - Recommend optimal pricing strategies
+   - Suggest crew rotation schedules
+   - Advise on fleet expansion needs
+
+---
+
+## Technology Implementation Notes
+
+- **BPMN Tools Used:** Lucidchart (recommended)
+- **Diagram Elements:** Start/End events, Tasks, Gateways (Decision points), Swimlanes
+- **Integration Points:** PL/SQL triggers fire based on process events
+- **Audit Trail:** All transactions logged for compliance and analysis
+
+---
+
+**Prepared by:** Tuyishime Sabato Gad (26717)  
+**Date:** December 2025  
+**Course:** Database Development with PL/SQL (INSY 8311)
